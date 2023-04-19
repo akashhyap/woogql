@@ -35,16 +35,14 @@ async function fetchAuthToken() {
     // No refresh token means the user is not authenticated.
     throw new Error('Not authenticated');
   }
-
-  let authToken;
-  let sessionToken;
+  
 
   try {
     const graphQLClient = new GraphQLClient(process.env.NEXT_PUBLIC_WOOCOMMERCE_STORE_URL);
 
     const results = await graphQLClient.request(RefreshAuthTokenDocument, { refreshToken });
 
-    authToken = results?.refreshJwtAuthToken?.authToken;
+    const authToken = results?.refreshJwtAuthToken?.authToken;
 
     if (!authToken) {
       throw new Error('Failed to retrieve a new auth token');
@@ -57,7 +55,7 @@ async function fetchAuthToken() {
     );
 
     const customer = customerResults?.customer;
-    sessionToken = customer?.sessionToken;
+    const sessionToken = customer?.sessionToken;
     if (!sessionToken) {
       throw new Error('Failed to retrieve a new session token');
     }
@@ -107,27 +105,30 @@ const LoginDocument = gql`
 `;
 
 export async function login(username, password) {
+    let authToken;
+    let refreshToken;
+    let customer;
+  
     try {
-        const graphQLClient = new GraphQLClient(process.env.NEXT_PUBLIC_WOOCOMMERCE_STORE_URL);
-        const results = await graphQLClient.request(
-            LoginDocument,
-            { username, password },
-        );
-        const loginResults = results?.login;
-        const {
-            authToken,
-            refreshToken,
-            customer,
-        } = loginResults;
-
-        if (!authToken || !refreshToken || !customer?.sessionToken) {
-            throw new Error( 'Failed to retrieve credentials.');
-        }
+      const graphQLClient = new GraphQLClient(process.env.NEXT_PUBLIC_WOOCOMMERCE_STORE_URL);
+      const results = await graphQLClient.request(
+        LoginDocument,
+        { username, password },
+      );
+      const loginResults = results?.login;
+      authToken = loginResults.authToken;
+      refreshToken = loginResults.refreshToken;
+      customer = loginResults.customer;
+  
+      if (!authToken || !refreshToken || !customer?.sessionToken) {
+        throw new Error('Failed to retrieve credentials.');
+      }
     } catch (error) {
-        throw new Error(error);
+      throw new Error(error);
     }
-
+  
     saveCredentials(authToken, customer.sessionToken, refreshToken);
-
+  
     return customer;
-}
+  }
+  
