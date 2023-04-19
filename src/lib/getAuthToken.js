@@ -36,12 +36,15 @@ async function fetchAuthToken() {
     throw new Error('Not authenticated');
   }
 
+  let authToken;
+  let sessionToken;
+
   try {
     const graphQLClient = new GraphQLClient(process.env.NEXT_PUBLIC_WOOCOMMERCE_STORE_URL);
 
     const results = await graphQLClient.request(RefreshAuthTokenDocument, { refreshToken });
 
-    const authToken = results?.refreshJwtAuthToken?.authToken;
+    authToken = results?.refreshJwtAuthToken?.authToken;
 
     if (!authToken) {
       throw new Error('Failed to retrieve a new auth token');
@@ -54,7 +57,7 @@ async function fetchAuthToken() {
     );
 
     const customer = customerResults?.customer;
-    const sessionToken = customer?.sessionToken;
+    sessionToken = customer?.sessionToken;
     if (!sessionToken) {
       throw new Error('Failed to retrieve a new session token');
     }
